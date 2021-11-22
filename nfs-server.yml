@@ -1,0 +1,48 @@
+---
+- hosts: nfs-server
+  become: yes
+  tasks:
+    - name: install nfs-utils
+      yum: name=nfs-utils state=latest
+
+    - name: Create a mountable directory if it does not exist
+      file:
+        path: /home/teamwork/cm-prod
+        state: directory
+        owner: teamwork
+        group: teamwork
+        mode: '0775'
+
+    - name: create multiple directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: teamwork
+        group: teamwork
+        mode: '0775'
+      with_items:
+        - '/home/teamwork/cm-prod/campaigns'
+        - '/home/teamwork/cm-prod/templates'
+        - '/home/teamwork/cm-prod/uploadedfiles'
+        - '/home/teamwork/cm-prod/splitfiles'
+        - '/home/teamwork/cm-prod/groups'
+        - '/home/teamwork/cm-prod/dlttemplates'
+        - '/home/teamwork/cm-prod/log_download/csv'
+
+    - name: enable rpcbind nfslock nfs
+      service:
+        name: "{{ item }}"
+        enabled: yes
+      with_items:
+        - rpcbind
+        - nfslock
+        - nfs
+    - name: Copy exports file.
+      template:
+        src: ./ansible/exports.j2
+        dest: /etc/exports
+        owner: root
+        group: root
+        mode: 0644
+    - name: NFS apply change configrue
+      shell: systemctl reload nfs;exportfs -a

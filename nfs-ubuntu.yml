@@ -1,0 +1,24 @@
+---
+- hosts: nfs-ubuntu
+  become: yes
+  tasks:
+    - name: Install NFS utils
+      apt:
+        name: nfs-common
+        state: present
+        update_cache: yes
+        cache_valid_time: 3600
+    - name: Create a mountable directory if it does not exist
+      file:
+        path: /home/teamwork/cm-prod
+        state: directory
+        owner: teamwork
+        group: teamwork
+        mode: '0775'
+      tags: nfs-ubuntu
+
+    - mount:
+        name: /home/teamwork/cm-prod
+        src: 192.168.1.153:/home/teamwork/cm-prod
+        fstype: nfs
+        state: mounted
